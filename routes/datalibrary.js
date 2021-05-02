@@ -1,7 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const DataLibrary = require("../models/datalibrary")
-const geoip = require('geoip-lite');
+const geoip = require('geoip-lite')
 
 router.post('/submit-data', function (req, res) {
     const rawdata = req.body;  // data from jspsych

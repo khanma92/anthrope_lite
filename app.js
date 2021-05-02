@@ -1,6 +1,8 @@
 // LOAD MODULES 
 var express = require("express"),
+    sqlite = require('sqlite3').verbose(),
     app = express(),
+    geoip = require('geoip-lite')
     bodyParser = require('body-parser'),
     mongoose = require('mongoose'),
     passport = require('passport'),
@@ -14,7 +16,7 @@ var express = require("express"),
 
 var showRoutes = require('./routes/show'),
     indexRoutes = require('./routes/index'),
-    datalibraryRoutes = require('./routes/datalibrary'),
+    //datalibraryRoutes = require('./routes/datalibrary'),
     vizRoutes = require('./routes/viz'),
     authRoutes = require('./routes/auth'),
     downloadsRoutes = require('./routes/downloads'),
@@ -36,6 +38,137 @@ mongoose.connect(mongoDB,
         }
     }
 );
+
+// Connection to SQLite database
+const db_name = path.join(__dirname, "models", "data_lib.db");
+const db = new sqlite.Database(db_name, err => {
+  if (err) {
+    return console.error(err.message);
+  }
+  console.log("Successful connection to the database 'data_lib.db'");
+});
+
+// Creating the DataLibrary table 
+const sql_create = `CREATE TABLE IF NOT EXISTS DataLibrary (
+    data BLOB, 
+    info_ BLOB, 
+    geoinfo BLOB, 
+    datasummary BLOB,
+    subject, 
+    type, 
+    uniquestudyid, 
+    desc, 
+    condition, 
+    previous_uniquestudyid,
+    previous_time, 
+    previous_mins_before, 
+    browser, 
+    browser_ver, 
+    os, 
+    platform,
+    time, 
+    utc_datetime, 
+    utc_date BLOB, 
+    utc_time BLOB, 
+    user_date, 
+    user_time
+  );`;
+  db.run(sql_create, err => {
+    if (err) {
+      return console.error(err.message);
+    }
+    console.log("Successful creation of the 'DataLibrary' table");
+})
+
+app.post('/submit-data', function (req, res) {
+    const rawdata = req.body;  // data from jspsych
+    const info = rawdata[0].info_; // get info_ from object/trial 0
+    console.assert(info != null, 'No info stored in data, please add to jsPsych data.')
+    const datasummary = rawdata[0].datasummary;  // get datasummary_ from object/trial 0
+    const ua = req.useragent; // get client/user info using express-useragent package
+
+    // get ip
+    // https://stackoverflow.com/questions/8107856/how-to-determine-a-users-ip-address-in-node
+    var ip = req.headers['x-forwarded-for'] ||
+        req.connection.remoteAddress ||
+        req.socket.remoteAddress ||
+        (req.connection.socket ? req.connection.socket.remoteAddress : null);
+    // var ip = "2001:569:7530:8100:719d:bd86:de7a:797b"
+
+    var geoinfo = geoip.lookup(ip);
+    if (!geoinfo) {
+        var geoinfo = {
+            range: [null, null],
+            country: null,
+            region: null,
+            eu: null,
+            timezone: null,
+            city: null,
+            ll: [null, null],
+            metro: null,
+            area: null
+        }
+    };
+
+    // add columns/properties to each row/trial/object in jspsych data (eventually 2D tables/csv)
+    rawdata.forEach(function (i) {
+        delete i.info_; // delete to save space
+        delete i.datasummary; // delete to save space
+
+        // task info
+        i.type = info.type;
+        i.uniquestudyid = info.uniquestudyid;
+        i.desc = info.desc;
+        i.condition = info.condition;
+        i.redirect_url = info.redirect_url;
+        i.previous_uniquestudyid = info.previous_uniquestudyid;
+        i.previous_time = info.previous_time;
+        i.previous_mins_before = info.previous_mins_before;
+        i.previous_task_completed = info.previous_task_completed;
+
+        // geo/time info
+        i.utc_datetime = info.utc_datetime,
+        i.country = info.demographics.country,
+        i.country_code = info.demographics.country_code,
+        i.time = info.time,
+        
+        // client info
+        i.browser = ua.browser;
+        i.browser_ver = ua.version;
+        i.os = ua.os;
+        i.platform = ua.platform;
+        i.ip = ip;
+
+        // demographics
+        i.nationality = info.demographics.country_associate;
+        i.nationality_code = info.demographics.country_associate_code;
+        i.language = info.demographics.language;
+        i.language_code = info.demographics.language_code;
+        i.religion = info.demographics.religion;
+        i.race_ethnicity = info.demographics.race_ethnicity;
+        i.gender = info.demographics.gender;
+        i.handedness = info.demographics.handedness;
+        i.life_satisfaction = info.demographics.life_satisfaction;
+    })
+
+    // add fields to this document
+    const sql = "INSERT INTO DataLibrary (data, info_, geoinfo, datasummary, " + 
+        "subject, type, uniquestudyid, desc, condition, previous_uniquestudyid," +
+        "previous_time, previous_mins_before, browser, browser_ver, os, platform," +
+        "time, utc_datetime, utc_date, utc_time, user_date, user_time) VALUES (?, ?," +
+        "?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+    const exp_data = [JSON.stringify(rawdata), JSON.stringify(info), JSON.stringify(geoinfo), JSON.stringify(datasummary), info.subject, info.type, info.uniquestudyid, info.desc, info.condition, 
+                  info.previous_uniquestudyid, info.previous_time, info.previous_mins_before, ua.browser, ua.version, ua.os, ua.platform, info.time, 
+                  info.utc_datetime, JSON.stringify(info.utc_date), JSON.stringify(info.utc_time), info.utc_user_date, info.utc_user_time];
+    db.run(sql, exp_data, err => {
+        if (err) {
+            console.log(err)
+            res.sendStatus(500);
+        } else {
+            res.sendStatus(200);
+        }})
+    });
+
 
 // PASSPORT CONFIGURATION
 app.use(require("express-session")({
@@ -65,7 +198,7 @@ app.use('/libraries', express.static(__dirname + "/libraries"));
 app.use('/public', express.static(__dirname + "/public"));
 
 app.use(indexRoutes);
-app.use(datalibraryRoutes);
+//app.use(datalibraryRoutes);
 app.use(showRoutes);
 app.use(vizRoutes);
 app.use(downloadsRoutes);
@@ -85,4 +218,3 @@ app.use(function (error, req, res, next) {
 // START SERVER
 app.listen(process.env.PORT || 8080); // process.env.PORT is undefined by default
 console.log("Server started on port 8080");
-// comment test 
