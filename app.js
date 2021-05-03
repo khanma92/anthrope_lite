@@ -2,11 +2,7 @@
 var express = require("express"),
     sqlite = require('sqlite3').verbose(),
     app = express(),
-    geoip = require('geoip-lite')
     bodyParser = require('body-parser'),
-    mongoose = require('mongoose'),
-    passport = require('passport'),
-    LocalStrategy = require('passport-local'),
     path = require('path'),
     favicon = require('serve-favicon'),
     useragent = require('express-useragent'),
@@ -29,15 +25,6 @@ app.use(bodyParser.urlencoded({limit: '50mb', extended: true}));
 app.use(express.json());
 app.use(useragent.express());
 app.set("view engine", "ejs"); // use ejs template engine for rendering
-
-var mongoDB = process.env.MONGODB_URI || "mongodb://localhost/datalibrary"; 
-mongoose.connect(mongoDB,
-    { useUnifiedTopology: true, useNewUrlParser: true }, function (err) {
-        if (err) { console.log('Not connected to database!'); } else {
-            console.log('Successfully connected to database.')
-        }
-    }
-);
 
 // Connection to SQLite Data libary database
 const db_name = path.join(__dirname, "models", "data_lib.db");
