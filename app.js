@@ -39,7 +39,7 @@ mongoose.connect(mongoDB,
     }
 );
 
-// Connection to SQLite database
+// Connection to SQLite Data libary database
 const db_name = path.join(__dirname, "models", "data_lib.db");
 const db = new sqlite.Database(db_name, err => {
   if (err) {
@@ -78,6 +78,27 @@ const sql_create = `CREATE TABLE IF NOT EXISTS DataLibrary (
       return console.error(err.message);
     }
     console.log("Successful creation of the 'DataLibrary' table");
+})
+
+// Connection to SQLite User database
+const db_name = path.join(__dirname, "models", "user.db");
+const db = new sqlite.Database(db_name, err => {
+  if (err) {
+    return console.error(err.message);
+  }
+  console.log("Successful connection to the database 'user.db'");
+});
+
+// Creating the User table 
+const sql_create = `CREATE TABLE IF NOT EXISTS User (
+    username, 
+    password
+  );`;
+  db.run(sql_create, err => {
+    if (err) {
+      return console.error(err.message);
+    }
+    console.log("Successful creation of the 'User' table");
 })
 
 app.post('/submit-data', function (req, res) {
