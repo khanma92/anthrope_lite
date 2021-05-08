@@ -2,25 +2,11 @@
 var express = require("express"),
     sqlite = require('sqlite3').verbose(),
     app = express(),
-    geoip = require('geoip-lite')
     bodyParser = require('body-parser'),
-    mongoose = require('mongoose'),
-    passport = require('passport'),
-    LocalStrategy = require('passport-local'),
     path = require('path'),
-    favicon = require('serve-favicon'),
     useragent = require('express-useragent'),
-    User = require('./models/user'),
-    DataLibrary = require('./models/datalibrary'),
-    helper = require('./routes/helpers/helpers')
-
-var showRoutes = require('./routes/show'),
-    indexRoutes = require('./routes/index'),
-    //datalibraryRoutes = require('./routes/datalibrary'),
-    vizRoutes = require('./routes/viz'),
-    authRoutes = require('./routes/auth'),
-    downloadsRoutes = require('./routes/downloads'),
-    deleteRoutes = require('./routes/delete')
+    helper = require('./helpers'),
+    geoip = require("geoip-lite")
 
 // limit parameter required to send larger json files
 // https://stackoverflow.com/questions/19917401/error-request-entity-too-large
@@ -28,18 +14,15 @@ app.use(bodyParser.json({limit: '50mb'}));
 app.use(bodyParser.urlencoded({limit: '50mb', extended: true}));
 app.use(express.json());
 app.use(useragent.express());
-app.set("view engine", "ejs"); // use ejs template engine for rendering
+app.use('/jspsych', express.static(__dirname + "/jspsych"));
+app.use('/delaydiscount', express.static(__dirname + "/delaydiscount"));
 
-var mongoDB = process.env.MONGODB_URI || "mongodb://localhost/datalibrary"; 
-mongoose.connect(mongoDB,
-    { useUnifiedTopology: true, useNewUrlParser: true }, function (err) {
-        if (err) { console.log('Not connected to database!'); } else {
-            console.log('Successfully connected to database.')
-        }
-    }
-);
 
-// Connection to SQLite database
+
+
+// DB CONNECTION + CONFIGURATION 
+
+// CONNECTION TO SQLITE DATALIBRARY DB
 const db_name = path.join(__dirname, "models", "data_lib.db");
 const db = new sqlite.Database(db_name, err => {
   if (err) {
@@ -48,7 +31,7 @@ const db = new sqlite.Database(db_name, err => {
   console.log("Successful connection to the database 'data_lib.db'");
 });
 
-// Creating the DataLibrary table 
+// CREATING DATALIBRARY TABLE
 const sql_create = `CREATE TABLE IF NOT EXISTS DataLibrary (
     data BLOB, 
     info_ BLOB, 
@@ -79,6 +62,17 @@ const sql_create = `CREATE TABLE IF NOT EXISTS DataLibrary (
     }
     console.log("Successful creation of the 'DataLibrary' table");
 })
+
+
+
+
+// ROUTES 
+
+app.get('/:uniquestudyid', function (req, res) {
+    console.log(req.params.uniquestudyid)
+    res.sendFile(path.join(__dirname, '/' + req.params.uniquestudyid + '/' + 'task.html'))
+    });
+
 
 app.post('/submit-data', function (req, res) {
     const rawdata = req.body;  // data from jspsych
@@ -169,50 +163,26 @@ app.post('/submit-data', function (req, res) {
         }})
     });
 
+// DOWNLOAD ROUTES 
 
-// PASSPORT CONFIGURATION
-app.use(require("express-session")({
-    secret: "Welcome to Anthrope.",  // USED TO DECODE INFO IN THE SESSION, STILL TRYING TO FIGURE IT OUT
-    resave: false, 
-    saveUninitialized: false
-}));
+app.get('/d1', function (req, res) {
+    // Download the most recent document (regardless of task)
+    const sql = "SELECT * FROM DataLibrary ORDER BY row_id DESC LIMIT 1";
+    db.run(sql).then(doc => {
+            if (doc == null) {
+                console.log("No data found.")
+            } else {
+                const filename = doc.type + "_" + doc.uniquestudyid + "_" + doc.subject + '.csv';
+                var datastring = helper.json2csv(doc.data);
+                res.attachment(filename);
+                res.status(200).send(datastring);
+            }
+        })
+        .catch(err => {
+            console.log(err);
+            res.status(200).send(err);
+        });
 
-app.use(passport.initialize()); // SET UP PASSPORT
-app.use(passport.session());    // SET UP PASSPORT
-passport.use(new LocalStrategy(User.authenticate()));
-passport.serializeUser(User.serializeUser()); // USED TO READING DATA FROM THE SESSION, WHAT DATA OF THE USER SHOULD BE STORED IN THE SESSION?
-passport.deserializeUser(User.deserializeUser()); // USED TO DECODE THE DATA FROM THE SESSION
-
-app.use(function(req, res, next){
-    res.locals.currentUser = req.user;
-    next();
-});
-
-// // TELL EXPRESS TO USE THE FOLLOWING LIBRARIES/FILES
-app.use(favicon(__dirname + '/public/assets/img/favicon.ico')); // to show favicon
-app.use('/tasks', express.static(__dirname + "/tasks"));
-app.use('/surveys', express.static(__dirname + "/surveys"));
-app.use('/studies', express.static(__dirname + "/studies"));
-app.use('/jspsych', express.static(__dirname + "/jspsych"));
-app.use('/libraries', express.static(__dirname + "/libraries"));
-app.use('/public', express.static(__dirname + "/public"));
-
-app.use(indexRoutes);
-//app.use(datalibraryRoutes);
-app.use(showRoutes);
-app.use(vizRoutes);
-app.use(downloadsRoutes);
-app.use(deleteRoutes);
-app.use(authRoutes);
-
-// Handle 404
-app.use(function (req, res) {
-    helper.cssFix(req, res, "404", 404)
-});
-
-// Handle 500
-app.use(function (error, req, res, next) {
-    helper.cssFix(req, res, "500", 500)
 });
 
 // START SERVER

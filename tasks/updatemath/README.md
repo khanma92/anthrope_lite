@@ -1,2 +1,0 @@
-# Updating math task
-
