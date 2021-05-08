@@ -18,6 +18,7 @@ app.use('/jspsych', express.static(__dirname + "/jspsych"));
 app.use('/delaydiscount', express.static(__dirname + "/delaydiscount"));
 app.use('/flanker', express.static(__dirname + "/flanker"));
 app.use('/letternumber', express.static(__dirname + "/letternumber"));
+app.use('/nback', express.static(__dirname + "/nback"));
 
 
 
