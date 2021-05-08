@@ -16,6 +16,7 @@ app.use(express.json());
 app.use(useragent.express());
 app.use('/jspsych', express.static(__dirname + "/jspsych"));
 app.use('/delaydiscount', express.static(__dirname + "/delaydiscount"));
+app.use('/flanker', express.static(__dirname + "/flanker"));
 
 
 
