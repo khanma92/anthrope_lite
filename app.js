@@ -23,6 +23,7 @@ app.use('/stroop', express.static(__dirname + "/stroop"));
 app.use('/symbolcount', express.static(__dirname + "/symbolcount"));
 app.use('/updatemath', express.static(__dirname + "/updatemath"));
 app.use('/updatemath2', express.static(__dirname + "/updatemath2"));
+app.use('/bigfiveaspect', express.static(__dirname + "/bigfiveaspect"));
 
 
 
