@@ -1,4 +1,4 @@
-# delay discounting
+# symbol counting task
 
-Hardisty, D. J., Thompson, K. F., Krantz, D. H., & Weber, E. U. (2013). How to measure time preferences: An experimental comparison of three methods. Judgment and Decision Making, 8(3), 236-249. [Link](http://journal.sjdm.org/12/12209/jdm12209.html)
+Garavan, H., Ross, T. J., Li, S.-J., & Stein, E. A. (2000). A parametric manipulation of central executive functioning. Cerebral Cortex, 10(6), 585-592. doi:[10.1093/cercor/10.6.585](https://academic.oup.com/cercor/article/10/6/585/347513) 
 
