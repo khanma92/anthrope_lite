@@ -28,6 +28,7 @@ app.use('/brs1', express.static(__dirname + "/brs1"));
 app.use('/crt', express.static(__dirname + "/crt"));
 app.use('/gritshort', express.static(__dirname + "/gritshort"));
 app.use('/schulzvalues2019', express.static(__dirname + "/schulzvalues2019"));
+app.use('/zzz/brs2', express.static(__dirname + "/zzz/brs2"));
 
 
 
