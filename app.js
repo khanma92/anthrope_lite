@@ -7,8 +7,6 @@ var express = require("express"),
     useragent = require('express-useragent'),
     helper = require('./helpers'),
     geoip = require("geoip-lite")
-    fs = require("fs")
-    data = "./data"
 
 // limit parameter required to send larger json files
 // https://stackoverflow.com/questions/19917401/error-request-entity-too-large
@@ -17,33 +15,7 @@ app.use(bodyParser.urlencoded({limit: '50mb', extended: true}));
 app.use(express.json());
 app.use(useragent.express());
 app.use('/jspsych', express.static(__dirname + "/jspsych"));
-
-fs.readdir(data, function (err, files) {
-    if (err) {
-        console.log(err);
-        process.exit(1)
-    }
-    files.forEach(function (file) {
-        app.use('/' + file, express.static(path.join(__dirname, "/data/" + file)))
-    });
-})
-
-//app.use('/jspsych', express.static(__dirname + "/jspsych"));
-//app.use('/delaydiscount', express.static(path.join(__dirname + "/data/delaydiscount")));
-// app.use('/flanker', express.static(__dirname + "/flanker"));
-// app.use('/letternumber', express.static(__dirname + "/letternumber"));
-// app.use('/nback', express.static(__dirname + "/nback"));
-// app.use('/stroop', express.static(__dirname + "/stroop"));
-// app.use('/symbolcount', express.static(__dirname + "/symbolcount"));
-// app.use('/updatemath', express.static(__dirname + "/updatemath"));
-// app.use('/updatemath2', express.static(__dirname + "/updatemath2"));
-// app.use('/bigfiveaspect', express.static(__dirname + "/bigfiveaspect"));
-// app.use('/brs1', express.static(__dirname + "/brs1"));
-// app.use('/crt', express.static(__dirname + "/crt"));
-// app.use('/gritshort', express.static(__dirname + "/gritshort"));
-// app.use('/schulzvalues2019', express.static(__dirname + "/schulzvalues2019"));
-// app.use('/zzz/brs2', express.static(__dirname + "/zzz/brs2"));
-
+app.use(express.static('data'))
 
 
 
