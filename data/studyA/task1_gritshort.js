@@ -3,7 +3,7 @@ const taskinfo = {
     uniquestudyid: 'studyA1', // unique task id: must be IDENTICAL to directory name
     desc: 'Duckworth 2009 grit short scale', // brief description of task
     condition: null, // experiment/task condition
-    redirect_url: "../../studies/studyA/task2_bigfiveaspect.html" // set to false if no redirection required
+    redirect_url: "task2_bigfiveaspect.html" // set to false if no redirection required
 };
 
 var info_ = create_info_(taskinfo);  // initialize subject id and task parameters
@@ -28,7 +28,7 @@ var shuffle_items = false; // randomize order of item presentation
 
 // read survey csv file
 // https://www.papaparse.com
-const csvfile = '../../surveys/gritshort/items.csv';
+const csvfile = '../data/gritshort/items.csv';
 console.log('Reading file: ' + csvfile);
 Papa.parse(csvfile, {
     download: true,
